@@ -18,10 +18,13 @@ public class Main {
     private static NGram[][] bigramsOT;
 
     public static void main(String[] args) {  
-        // trainUnigrams("EN");
-        // trainUnigrams("FR");     
-        // trainUnigrams("OT");
+        trainUnigrams("EN");
+        trainUnigrams("FR");
+        trainUnigrams("OT");
+
         trainBigrams("EN");
+        trainBigrams("FR");
+        trainBigrams("OT");
     }
 
     private static NGram[] initUnigrams(String language, NGram[] unigrams) {
@@ -73,7 +76,13 @@ public class Main {
     }
 
     private static void outputUnigrams(NGram[] unigrams, String language) {
-        double denominator = unigrams.length + SMOOTHING_DELTA * getUnigramVocabularySize(unigrams);
+        // Calculate P(unigram) = (Count(letter) + delta) / (N + delta * B)
+        // N = total number of n-grams in corpus
+        // B = size of vocabulary 
+
+        long n = getTotalUnigramCount(unigrams);
+        long b = NGram.getVocabularySize();
+        double denominator = n + SMOOTHING_DELTA * b;
 
         try {
             PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/unigram" + language + ".txt");
@@ -81,10 +90,10 @@ public class Main {
             // Smoothed probabilities
             // No log applied
             for (NGram u : unigrams) {            
-                pw.print("(" + u.getLetter() + ") = ");
+                pw.print("(" + u.getCharacter() + ") = ");
                 double numerator = u.getCount() + SMOOTHING_DELTA;
-                double letterProbability = numerator / denominator;
-                pw.println(letterProbability);
+                double probability = numerator / denominator;
+                pw.println(probability);
             }
 
             pw.close();
@@ -94,30 +103,30 @@ public class Main {
         }  
     }
 
-    private static long getUnigramVocabularySize(NGram[] unigrams) {
-        long size = 0;
+    private static long getTotalUnigramCount(NGram[] unigrams) {
+        long count = 0;
 
         for (NGram u : unigrams) {
-            size += u.getCount();
+            count += u.getCount();
         }
 
-        return size;
+        return count;
     }
 
     private static NGram[][] initBigrams(String language, NGram[][] bigrams) {
         /*
         [
-            a [a, b, c, ..., z],
-            b [a, b, c, ..., z],
-            c [a, b, c, ..., z],
+            [a, b, c, ..., z], -> bigrams aa, ab, ac, ..., az
+            [a, b, c, ..., z], -> bigrams ba, bb, bc, ..., bz
+            [a, b, c, ..., z], -> bigrams ca, cb, cc, ..., cz
             ...
-            z [a, b, c, ..., z]
+            [a, b, c, ..., z]  -> bigrams za, zb, zc, ..., zz
         ]
-        Counters are incremented in inner n-grams
-        e.g. bigram aa
-        a [a <-- counter incremented here]
-        ^ counter remains at 0
         */
+
+        for (NGram[] outer : bigrams) {            
+            initUnigrams(language, outer);
+        }
 
         return bigrams;
     }
@@ -158,13 +167,16 @@ public class Main {
                     secondLetter = Character.toLowerCase((char)secondValue);
                     firstValue = secondValue;
                     secondValue = in.read();
+
+                    int firstIndex = NGram.getCharacterSet().indexOf(firstLetter);
+                    int secondIndex = NGram.getCharacterSet().indexOf(secondLetter);
+                    bigrams[firstIndex][secondIndex].incrementCount();
                 }
                 else if (Character.isAlphabetic(firstValue) && !Character.isAlphabetic(secondValue)) {
                     // C'est -> ce, es, st
                     // Skip second character until a letter is found
                     firstLetter = Character.toLowerCase((char)firstValue);                  
                     secondValue = in.read();
-                    continue;
                 }
                 else if (!Character.isAlphabetic(firstValue) && Character.isAlphabetic(secondValue)) {
                     // "Hey" -> he, ey
@@ -172,54 +184,48 @@ public class Main {
                     firstLetter = Character.toLowerCase((char)secondValue);
                     firstValue = secondValue;
                     secondValue = in.read();
-                    continue;
                 }
                 else {
                     // --HACKLUYT -> ha, ac, ck, kl, lu, uy, yt
                     // Skip twice
                     firstValue = in.read();
                     secondValue = in.read();
-                    continue;
                 }
-                System.out.print(firstLetter);
-                System.out.println(secondLetter);
-            }
-
-            
-            // Ex: abc
-            // Bigram: ab => Printed (a|b) in bigram output file
-            // P(b|a) => Probability that b follows a
-            // P(b|a) = P(b,a) / P(a)
-
-            // Read first letter
-            // Get first index
-            // Move to next
-            // Read second letter
-            // Get second index
-            // Increment inner n-gram count
-
-            // int index = NGram.getCharacterSet().indexOf(letter);
-            // in.
-            // unigrams[index].incrementCount();   
+            }  
 
             in.close();           
         }
         catch (IOException e) {
 
         }
-        // Output language model
-        //outputBigrams(bigrams, language);
+
+        //printProbabilityTable(bigrams, language);
+        outputBigrams(bigrams, language);
     }
 
     private static void outputBigrams(NGram[][] bigrams, String language) {
-        double denominator = bigrams.length + SMOOTHING_DELTA * getBigramVocabularySize(bigrams);
+        // Calculate P(bigram) = (Count(bigram) + delta) / (N + delta * B)
+        // P(bigram) = probability of a letter following another
+        // e.g. in EN, P(h|w) >>>> P(z|x)
+        // N = total number of n-grams in corpus for that bigram
+        // e.g. for vocab ab: (a|a) = 8, (a|b) = 2 -> N = 10 
+        // B = size of vocabulary 
 
         try {
             PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/bigram" + language + ".txt");
 
-            for (NGram[] outer : bigrams) {            
-                for (NGram inner : outer) {
+            for (int i = 0; i < bigrams.length; i++) {            
+                for (int j = 0; j < bigrams[i].length; j++) {
                     // Calculate smoothed conditional probability
+                    pw.print("(" + NGram.getCharacterSet().charAt(i) + "|" + bigrams[i][j].getCharacter() + ") = ");
+                    
+                    double numerator = bigrams[i][j].getCount() + SMOOTHING_DELTA;
+                    long n = getBigramCount(bigrams, i);
+                    long b = NGram.getVocabularySize();
+                    double denominator = n + SMOOTHING_DELTA * b;
+                    
+                    double probability = numerator / denominator;
+                    pw.println(probability);
                 }
             }
 
@@ -230,15 +236,43 @@ public class Main {
         }  
     }
 
-    private static long getBigramVocabularySize(NGram[][] bigrams) {
-        long size = 0;
+    // For testing purposes only
+    private static void printProbabilityTable(NGram[][] bigrams, String language) {
+        try {
+            PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/probTable" + language + ".txt");
 
-        for (NGram[] outer : bigrams) {            
-            for (NGram inner : outer) {
-                size += inner.getCount();
+            pw.println(language + " BIGRAMS");
+            for (char letter : NGram.getCharacterSet().toCharArray()) {
+                pw.print("\t\t\t" + letter);
             }
-        }
+            pw.println("\t\t\tTotal");
 
-        return size;
+            for (int i = 0; i < bigrams.length; i++) {
+                pw.print(NGram.getCharacterSet().charAt(i) + "\t\t\t");
+                for (int j = 0; j < bigrams[i].length; j++) {
+                    double numerator = bigrams[i][j].getCount() + SMOOTHING_DELTA;
+                    pw.printf("%-12s", numerator);
+                }
+                
+                long n = getBigramCount(bigrams, i);
+                long b = NGram.getVocabularySize();
+                double denominator = n + SMOOTHING_DELTA * b;
+                pw.println(denominator);
+            }
+
+            pw.close();
+        } catch (IOException e) {
+
+        }
+    }
+
+    private static long getBigramCount(NGram[][] bigrams, int outerIndex) {
+        long count = 0;
+     
+        for (NGram inner : bigrams[outerIndex]) {
+            count += inner.getCount();
+        }        
+
+        return count;
     }
 }

@@ -5,24 +5,28 @@ public class NGram {
     // FR = French
     // OT = Spanish
     private String language;
-    private char letter;
+    private char character;
     private long count; 
     
-    public NGram(String _language, char _letter) {
+    public NGram(String _language, char _character) {
         language = _language;
-        letter = _letter;
+        character = _character;
     }
 
     public static String getCharacterSet() {
         return CHARACTER_SET;
     }
 
+    public static int getVocabularySize() {
+        return CHARACTER_SET.length();
+    }
+
     public String getLanguage() {
         return language;
     }
 
-    public char getLetter() {
-        return letter;
+    public char getCharacter() {
+        return character;
     }
 
     public long getCount() {
