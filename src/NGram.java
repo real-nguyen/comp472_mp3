@@ -1,4 +1,4 @@
-public class Unigram {
+public class NGram {
 
     private static final String CHARACTER_SET = "abcdefghijklmnopqrstuvwxyz";
     // EN = English
@@ -6,9 +6,9 @@ public class Unigram {
     // OT = Spanish
     private String language;
     private char letter;
-    private long letterCount; 
+    private long count; 
     
-    public Unigram(String _language, char _letter) {
+    public NGram(String _language, char _letter) {
         language = _language;
         letter = _letter;
     }
@@ -25,11 +25,11 @@ public class Unigram {
         return letter;
     }
 
-    public long getLetterCount() {
-        return letterCount;
+    public long getCount() {
+        return count;
     }
 
-    public void incrementLetterCount() {
-        letterCount++;
+    public void incrementCount() {
+        count++;
     }
 }
