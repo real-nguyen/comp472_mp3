@@ -2,12 +2,17 @@
 What will the Japanese economy be like next year?
 She asked him if he was a student at this school.
 I'm OK.
+# Unigrams: Incorrect; classified as French -> all probabilities very close
 Birds build nests.
 I hate AI.
+# Unigrams: Incorrect; classified as Other -> French probability very close
 L'oiseau vole.
+# Unigrams/Bigrams: Incorrect; classified as English
 Woody Allen parle.
 Est-ce que l'arbitre est la?
+# Unigrams: Incorrect; classified as English -> French probability very close
 Cette phrase est en anglais.
+# Unigrams: Incorrect; classified as Other -> French probability very close
 J'aime l'IA.
 
 # b. Correctly classified sentences

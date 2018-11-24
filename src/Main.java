@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.LinkedList;
 
 public class Main {
 
@@ -25,6 +26,8 @@ public class Main {
         trainBigrams("EN");
         trainBigrams("FR");
         trainBigrams("OT");
+
+        readSentences();
     }
 
     private static NGram[] initUnigrams(String language, NGram[] unigrams) {
@@ -59,7 +62,6 @@ public class Main {
             int readValue;
             while ((readValue = in.read()) != -1) {                   
                 if (!Character.isAlphabetic(readValue)) {
-                    // Not a letter
                     continue;
                 }
                 char letter = Character.toLowerCase((char)readValue);
@@ -87,8 +89,6 @@ public class Main {
         try {
             PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/unigram" + language + ".txt");
 
-            // Smoothed probabilities
-            // No log applied
             for (NGram u : unigrams) {            
                 pw.print("(" + u.getCharacter() + ") = ");
                 double numerator = u.getCount() + SMOOTHING_DELTA;
@@ -199,7 +199,7 @@ public class Main {
 
         }
 
-        //printProbabilityTable(bigrams, language);
+        printProbabilityTable(bigrams, language);
         outputBigrams(bigrams, language);
     }
 
@@ -247,17 +247,17 @@ public class Main {
             }
             pw.println("\t\t\tTotal");
 
+            double total = 0;
             for (int i = 0; i < bigrams.length; i++) {
                 pw.print(NGram.getCharacterSet().charAt(i) + "\t\t\t");
                 for (int j = 0; j < bigrams[i].length; j++) {
-                    double numerator = bigrams[i][j].getCount() + SMOOTHING_DELTA;
-                    pw.printf("%-12s", numerator);
+                    double count = bigrams[i][j].getCount() + SMOOTHING_DELTA;
+                    pw.printf("%-12s", count);
+                    total += count;
                 }
-                
-                long n = getBigramCount(bigrams, i);
-                long b = NGram.getVocabularySize();
-                double denominator = n + SMOOTHING_DELTA * b;
-                pw.println(denominator);
+
+                pw.println(total);
+                total = 0;
             }
 
             pw.close();
@@ -274,5 +274,218 @@ public class Main {
         }        
 
         return count;
+    }
+
+    private static long getTotalBigramCount(NGram[][] bigrams) {
+        long count = 0;
+
+        for (int i = 0; i < bigrams.length; i++) {
+            for (int j = 0; j < bigrams[i].length; j++) {
+                count += bigrams[i][j].getCount();
+            }
+        }
+
+        return count;
+    }
+
+    private static void readSentences() {
+        LinkedList<String> sentences = new LinkedList<String>();        
+
+        try {
+            File sentencesFile = new File(INPUT_PATH + "/sentences.txt");
+            BufferedReader in = new BufferedReader(new FileReader(sentencesFile));           
+            String line;
+
+            while ((line = in.readLine()) != null) {
+                if (line.isEmpty() || line.startsWith("#")) {
+                    // Lines that start with # are comments; skip
+                    continue;
+                }
+
+                sentences.offer(line);
+            }
+            in.close(); 
+
+            int sentenceCount = 0;
+            while (!sentences.isEmpty()) {
+                PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/sentences/out" + ++sentenceCount + ".txt");
+                String sentence = sentences.poll();
+
+                pw.println(sentence);
+                readSentenceUnigrams(sentence, pw);
+                pw.println();
+                pw.println("--------------------");
+                pw.println();
+                readSentenceBigrams(sentence, pw);
+
+                pw.close();
+            }
+        }
+        catch (IOException e) {
+
+        }       
+    }
+
+    private static void readSentenceUnigrams(String sentence, PrintWriter pw) {        
+        pw.println("UNIGRAM MODEL:");
+        pw.println();
+
+        // HNB = argmax(log(P(cj)) + sum(log(P(wi|cj))))
+        double logProbabilityEN = getUnigramLanguageModelProbability("EN");
+        double logProbabilityFR = getUnigramLanguageModelProbability("FR");
+        double logProbabilityOT = getUnigramLanguageModelProbability("OT");
+
+        for (char c : sentence.toCharArray()) {
+            if (!Character.isAlphabetic(c)) {
+                continue;
+            }
+            
+            double tempProbability = 0;
+            c = Character.toLowerCase(c);
+            pw.println("UNIGRAM: " + c);
+
+            pw.print("FRENCH: P(" + c + ") = ");
+            tempProbability = getUnigramProbability(unigramsFR, c);
+            logProbabilityFR += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityFR);
+
+            pw.print("ENGLISH: P(" + c + ") = ");
+            tempProbability = getUnigramProbability(unigramsEN, c);
+            logProbabilityEN += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityEN);
+
+            pw.print("OTHER: P(" + c + ") = ");
+            tempProbability = getUnigramProbability(unigramsOT, c);
+            logProbabilityOT += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityOT);
+            pw.println();
+        }
+
+        double max = Math.max(logProbabilityEN, Math.max(logProbabilityFR, logProbabilityOT)); 
+        pw.print("According to the unigram model, the sentence is in ");
+        if (max == logProbabilityEN) {
+            pw.println("English");
+        }
+        else if (max == logProbabilityFR) {
+            pw.println("French");
+        }
+        else {
+            pw.println("Other");
+        }
+    }
+
+    private static double getUnigramLanguageModelProbability(String language) {
+        NGram[] unigrams;
+
+        if (language == "EN") {
+            unigrams = unigramsEN;
+        }
+        else if (language == "FR") {
+            unigrams = unigramsFR;
+        }
+        else {
+            unigrams = unigramsOT;
+        }
+
+        double numerator = getTotalUnigramCount(unigrams) + SMOOTHING_DELTA;
+        double denominator = getTotalUnigramCount(unigramsEN) + getTotalUnigramCount(unigramsFR) + getTotalUnigramCount(unigramsOT) + SMOOTHING_DELTA * NGram.getVocabularySize();    
+
+        return Math.log10(numerator / denominator);
+    }
+
+    private static double getUnigramProbability(NGram[] unigrams, char character) {
+        int index = NGram.getCharacterSet().indexOf(character);
+        double numerator = unigrams[index].getCount() + SMOOTHING_DELTA;
+        double denominator = getTotalUnigramCount(unigrams) + SMOOTHING_DELTA * NGram.getVocabularySize();
+
+        return Math.log10(numerator / denominator);
+    }
+
+    private static void readSentenceBigrams(String sentence, PrintWriter pw) {
+        pw.println("BIGRAM MODEL:");
+        pw.println();
+
+        // HNB = argmax(log(P(cj)) + sum(log(P(wi|cj))))
+        double logProbabilityEN = getBigramLanguageModelProbability("EN");
+        double logProbabilityFR = getBigramLanguageModelProbability("FR");
+        double logProbabilityOT = getBigramLanguageModelProbability("OT");
+        String cleanedSentence = "";
+
+        for (char c : sentence.toCharArray()) {
+           if (!Character.isAlphabetic(c)) {
+               continue;
+           }
+           cleanedSentence += Character.toLowerCase(c); 
+        }
+
+        char firstLetter;
+        char secondLetter;
+        for (int i = 0; i < cleanedSentence.length(); i++) {
+            if (i + 1 >= cleanedSentence.length()) {
+                break;
+            }
+
+            firstLetter = cleanedSentence.charAt(i);
+            secondLetter = cleanedSentence.charAt(i + 1);
+            double tempProbability = 0;
+
+            pw.println("BIGRAM: " + firstLetter + secondLetter);
+
+            pw.print("FRENCH: P(" + secondLetter + "|" + firstLetter + ") = ");
+            tempProbability = getBigramProbability(bigramsFR, firstLetter, secondLetter);
+            logProbabilityFR += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityFR);
+
+            pw.print("ENGLISH: P(" + secondLetter + "|" + firstLetter + ") = ");
+            tempProbability = getBigramProbability(bigramsEN, firstLetter, secondLetter);
+            logProbabilityEN += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityEN);
+
+            pw.print("OTHER: P(" + secondLetter + "|" + firstLetter + ") = ");
+            tempProbability = getBigramProbability(bigramsOT, firstLetter, secondLetter);
+            logProbabilityOT += tempProbability;
+            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityOT);
+            pw.println();
+        }
+
+        double max = Math.max(logProbabilityEN, Math.max(logProbabilityFR, logProbabilityOT)); 
+        pw.print("According to the unigram model, the sentence is in ");
+        if (max == logProbabilityEN) {
+            pw.println("English");
+        }
+        else if (max == logProbabilityFR) {
+            pw.println("French");
+        }
+        else {
+            pw.println("Other");
+        }
+    }
+
+    private static double getBigramLanguageModelProbability(String language) {
+        NGram[][] bigrams;
+
+        if (language == "EN") {
+            bigrams = bigramsEN;
+        }
+        else if (language == "FR") {
+            bigrams = bigramsFR;
+        }
+        else {
+            bigrams = bigramsOT;
+        }
+
+        double numerator = getTotalBigramCount(bigrams) + SMOOTHING_DELTA;
+        double denominator = getTotalBigramCount(bigramsEN) + getTotalBigramCount(bigramsEN) + getTotalBigramCount(bigramsEN) + SMOOTHING_DELTA * Math.pow(NGram.getVocabularySize(), 2);
+
+        return Math.log10(numerator / denominator);
+    }
+
+    private static double getBigramProbability(NGram[][] bigrams, char firstCharacter, char secondCharacter) {
+        int firstIndex = NGram.getCharacterSet().indexOf(firstCharacter);
+        int secondIndex = NGram.getCharacterSet().indexOf(secondCharacter);
+        double numerator = bigrams[firstIndex][secondIndex].getCount() + SMOOTHING_DELTA;
+        double denominator = getBigramCount(bigrams, firstIndex) + SMOOTHING_DELTA * NGram.getVocabularySize();
+    
+        return Math.log10(numerator / denominator);
     }
 }
