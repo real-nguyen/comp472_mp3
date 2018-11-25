@@ -1,20 +1,35 @@
-# a. Default 10 sentences
 What will the Japanese economy be like next year?
 She asked him if he was a student at this school.
 I'm OK.
-# Unigrams: Incorrect; classified as French -> all probabilities very close
 Birds build nests.
 I hate AI.
-# Unigrams: Incorrect; classified as Other -> French probability very close
 L'oiseau vole.
-# Unigrams/Bigrams: Incorrect; classified as English
 Woody Allen parle.
 Est-ce que l'arbitre est la?
-# Unigrams: Incorrect; classified as English -> French probability very close
 Cette phrase est en anglais.
-# Unigrams: Incorrect; classified as Other -> French probability very close
 J'aime l'IA.
+The lady doth protest too much, methinks.
+Amo la IA.
+El idioma espanol o castellano es una lengua romance procedente del latin hablado.
+Estamos dispuestos a creer cualquier cosa menos la verdad.
+¡Que alcahuete!
+Let there be light: and there was light.
+Que la lumiere soit, et la lumiere fut.
+Sea la luz, y fue la luz.
+No habla espanol.
+Fetchez la vache!
+The weather in Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu is lovely. 
+Woody Allen habla.
+¡Dale botjia!
+Charles died.
+Oda Nobunaga fue un daimyo.
+J'envoie des tweets sur Twitter.
+Tabarnak!
+El internet de las cosas.
+Conseguir el kayak.
+Numismatic symmetry should not antagonize economic acme. 
+J'envoie des gazouillis sur Gazouilleur.
+Totes les persones neixen/naixen lliures i iguals en dignitat i en drets.
+Son dotades de rao i de consciencia, i han de comportar-se fraternalment les unes amb les altres.
+Hwaet! We Gardena      in geardagum
 
-# b. Correctly classified sentences
-
-# c. Incorrectly classified sentences

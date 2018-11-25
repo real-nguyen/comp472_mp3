@@ -1,0 +1,68 @@
+﻿# a. Default 10 sentences
+What will the Japanese economy be like next year?
+She asked him if he was a student at this school.
+I'm OK.
+# Unigrams: classified as French
+Birds build nests.
+I hate AI.
+# Unigrams: classified as Other
+L'oiseau vole.
+# Unigrams/Bigrams: classified as English
+Woody Allen parle.
+Est-ce que l'arbitre est la?
+# Unigrams: classified as English
+Cette phrase est en anglais.
+# Unigrams: classified as Other
+J'aime l'IA.
+
+# b. Correctly classified sentences
+# English, taken from Hamlet
+The lady doth protest too much, methinks.
+# Other
+Amo la IA.
+# Other. Spanish Wikipedia article for the Spanish language
+El idioma espanol o castellano es una lengua romance procedente del latin hablado.
+# Other. Taken from https://es.wikiquote.org/wiki/La_sombra_del_viento
+Estamos dispuestos a creer cualquier cosa menos la verdad.
+# Other. Taken from friend. "Someone that flatters others insincerely or tries to please them."
+¡Que alcahuete!
+# Translations of the same quote
+Let there be light: and there was light.
+Que la lumiere soit, et la lumiere fut.
+Sea la luz, y fue la luz.
+# Other
+No habla espanol.
+# French. Taken from Monty Python & The Holy Grail
+Fetchez la vache!
+# English
+The weather in Taumatawhakatangihangakoauauotamateaturipukakapikimaungahoronukupokaiwhenuakitanatahu is lovely. 
+
+# c. Incorrectly classified sentences
+# Other. Taken from default sentences
+Woody Allen habla.
+# Other. Taken from friend. "Hurry up, kiddo!"
+¡Dale botjia!
+# English. Unigram: classified as English; Bigram: classified as French
+Charles died.
+# Other. Unigram: classified as Other; Bigram: classified as English
+Oda Nobunaga fue un daimyo.
+# French. Classified as English
+J'envoie des tweets sur Twitter.
+# French
+Tabarnak!
+# Other. Classified as French
+El internet de las cosas.
+# Other. Classified as English
+Conseguir el kayak.
+# English. Unigram: classified as Other
+Numismatic symmetry should not antagonize economic acme. 
+# French. Unigram: Classified as Other; Bigram: classified as French
+J'envoie des gazouillis sur Gazouilleur.
+
+# d. Experiments
+# Catalan part 1
+Totes les persones neixen/naixen lliures i iguals en dignitat i en drets.
+# Catalan part 2
+Son dotades de rao i de consciencia, i han de comportar-se fraternalment les unes amb les altres.
+# (Old) English. First line of Beowulf, taken from http://www.heorot.dk/beowulf-rede-text.html
+Hwaet! We Gardena      in geardagum

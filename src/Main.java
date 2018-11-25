@@ -174,13 +174,13 @@ public class Main {
                 }
                 else if (Character.isAlphabetic(firstValue) && !Character.isAlphabetic(secondValue)) {
                     // C'est -> ce, es, st
-                    // Skip second character until a letter is found
+                    // Keep first character then skip
                     firstLetter = Character.toLowerCase((char)firstValue);                  
                     secondValue = in.read();
                 }
                 else if (!Character.isAlphabetic(firstValue) && Character.isAlphabetic(secondValue)) {
                     // "Hey" -> he, ey
-                    // Make second character first character in next iteration
+                    // Keep second character then skip
                     firstLetter = Character.toLowerCase((char)secondValue);
                     firstValue = secondValue;
                     secondValue = in.read();
@@ -312,6 +312,7 @@ public class Main {
                 String sentence = sentences.poll();
 
                 pw.println(sentence);
+                pw.println();
                 readSentenceUnigrams(sentence, pw);
                 pw.println();
                 pw.println("--------------------");
@@ -449,7 +450,7 @@ public class Main {
         }
 
         double max = Math.max(logProbabilityEN, Math.max(logProbabilityFR, logProbabilityOT)); 
-        pw.print("According to the unigram model, the sentence is in ");
+        pw.print("According to the bigram model, the sentence is in ");
         if (max == logProbabilityEN) {
             pw.println("English");
         }
