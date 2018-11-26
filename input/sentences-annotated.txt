@@ -54,7 +54,7 @@ Tabarnak!
 El internet de las cosas.
 # Other. Classified as English
 Conseguir el kayak.
-# English. Unigram: classified as Other
+# English. Unigram: classified as Other. Taken from http://www.explorecrete.com/various/greek-zolotas.htm
 Numismatic symmetry should not antagonize economic acme. 
 # French. Unigram: Classified as Other; Bigram: classified as French
 J'envoie des gazouillis sur Gazouilleur.

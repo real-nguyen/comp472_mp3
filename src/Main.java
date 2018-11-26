@@ -199,7 +199,7 @@ public class Main {
 
         }
 
-        printProbabilityTable(bigrams, language);
+        //printProbabilityTable(bigrams, language);
         outputBigrams(bigrams, language);
     }
 
