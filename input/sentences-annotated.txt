@@ -19,8 +19,6 @@ J'aime l'IA.
 # English, taken from Hamlet
 The lady doth protest too much, methinks.
 # Other
-Amo la IA.
-# Other. Spanish Wikipedia article for the Spanish language
 El idioma espanol o castellano es una lengua romance procedente del latin hablado.
 # Other. Taken from https://es.wikiquote.org/wiki/La_sombra_del_viento
 Estamos dispuestos a creer cualquier cosa menos la verdad.
@@ -58,11 +56,3 @@ Conseguir el kayak.
 Numismatic symmetry should not antagonize economic acme. 
 # French. Unigram: Classified as Other; Bigram: classified as French
 J'envoie des gazouillis sur Gazouilleur.
-
-# d. Experiments
-# Catalan part 1
-Totes les persones neixen/naixen lliures i iguals en dignitat i en drets.
-# Catalan part 2
-Son dotades de rao i de consciencia, i han de comportar-se fraternalment les unes amb les altres.
-# (Old) English. First line of Beowulf, taken from http://www.heorot.dk/beowulf-rede-text.html
-Hwaet! We Gardena      in geardagum

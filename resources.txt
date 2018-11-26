@@ -1,5 +1,8 @@
+General resources
+https://pteo.paranoiaworks.mobi/diacriticsremover/
+https://translate.google.ca/
+
 Haitian Creole resources
-Google translate
 https://www.wikimizik.com
 http://woymagazine.com/cr/2018/10/15/10-bagay-gouvenman-ayisyen-ka-fe-pou-anpeche-kriz-politik-lan-vin-pi-mal/
 http://woymagazine.com/cr/2018/09/10/naomi-osaka-kiyes-nou-gen-dwa-rele-ayisyen/
@@ -13,3 +16,33 @@ https://www.madansarafilm.com/blog/
 https://www.madansarafilm.com/news/
 https://www.bookrix.com/_ebook-roselaure-beton-ayiti-cheri/
 http://www.fouyebible.com/
+https://ht.wikipedia.org/wiki/Tousen_Louv%C3%A8ti
+
+Old languages resources
+https://en.wikipedia.org/wiki/Cantar_de_Mio_Cid
+https://www.hs-augsburg.de/~harsch/gallica/Chronologie/11siecle/Roland/rol_ch01.html
+http://ebeowulf.uky.edu/ebeo4.0/start.html
+https://web.archive.org
+
+Mutually intelligible languages resources
+FR -> Norman
+https://en.wikipedia.org/wiki/Norman_language (info)
+https://fr.wikipedia.org/wiki/Jersiais (info)
+http://members.societe-jersiaise.org/geraint/jerriais.html (informal; jèrriais, spoken in Sark and Gaspésie)
+http://magene.pagesperso-orange.fr/allain.html (poetry)
+http://www.petit-prince.at/pp-normann.htm (literature)
+EN - > Scots
+https://en.wikipedia.org/wiki/Scots_language (info)
+https://sco.wikipedia.org/wiki/Main_Page (info)
+https://en.wikipedia.org/wiki/A_Drunk_Man_Looks_at_the_Thistle (poetry)
+http://www.scotstext.org/ (literature)
+http://www.petit-prince.at/pp-scots.htm (literature)
+OT -> Asturleonese (Asturian)
+https://en.wikipedia.org/wiki/Asturleonese_language (info)
+https://en.wikipedia.org/wiki/Asturian_language (info)
+https://ast.wikipedia.org/wiki/Dominiu_lling%C3%BC%C3%ADsticu_%C3%A1stur (info)
+http://www.academiadelallingua.com/ (formal)
+https://web.archive.org/web/20100924153252/http://www.asterionxxi.com.ar/numero7/asturias.htm (poetry)
+http://www.petit-prince.at/pp-astur.htm (literature)
+
+
