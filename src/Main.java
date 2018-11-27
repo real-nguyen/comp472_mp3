@@ -3,7 +3,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class Main {
 
@@ -11,53 +13,60 @@ public class Main {
     private final static String OUTPUT_PATH = "output";
     private final static double SMOOTHING_DELTA = 0.5;
 
-    private static NGram[] unigramsEN;
-    private static NGram[] unigramsFR;
-    private static NGram[] unigramsOT;
-    private static NGram[][] bigramsEN;
-    private static NGram[][] bigramsFR;
-    private static NGram[][] bigramsOT;
+    private static Map<String, NGram[]> unigrams;
+    private static Map<String, NGram[][]> bigrams;
+    private static Map<String, String> languages;
 
     public static void main(String[] args) {  
-        trainUnigrams("EN");
+        unigrams = new LinkedHashMap<String, NGram[]>();
+        bigrams = new LinkedHashMap<String, NGram[][]>();
+        languages = new LinkedHashMap<String, String>();
+        languages.put("FR", "FRENCH");
+        languages.put("EN", "ENGLISH");
+        languages.put("OT", "OTHER");
+
+        // Basic setup
         trainUnigrams("FR");
+        trainUnigrams("EN");        
         trainUnigrams("OT");
 
-        trainBigrams("EN");
         trainBigrams("FR");
+        trainBigrams("EN"); 
         trainBigrams("OT");
 
-        readSentences();
+        readSentences("/sentences.txt", "/sentences/out");
+
+        // Experiment 1: Read old forms of all 3 languages using same training data
+        readSentences("/experiments/ex1-sentences.txt", "/experiments/sentences/ex1-out");
+        // Experiment 2: Read mutually intelligible languages using same training data
+        readSentences("/experiments/ex2-sentences.txt", "/experiments/sentences/ex2-out");
+        // Experiment 3: Train system to read Haitian Creole (EX), then test with EX sentences
+        languages.put("EX", "EXPERIMENT");
+        trainUnigrams("EX");
+        trainBigrams("EX");
+        readSentences("/experiments/ex3-sentences.txt", "/experiments/sentences/ex3-out");
     }
 
-    private static NGram[] initUnigrams(String language, NGram[] unigrams) {
-        for (int i = 0; i < unigrams.length; i++) {
-            unigrams[i] = new NGram(language, NGram.getCharacterSet().charAt(i));
-        }
-
-        return unigrams;
-    }
-
-    private static void trainUnigrams(String language) {
+    private static NGram[] initUnigrams(String language) {        
         int length = NGram.getCharacterSet().length();
-        NGram[] unigrams;
+        unigrams.put(language, new NGram[length]);
 
-        if (language == "EN") {
-            unigramsEN = new NGram[length];
-            unigrams = initUnigrams(language, unigramsEN);
+        for (int i = 0; i < length; i++) {
+            unigrams.get(language)[i] = new NGram(language, NGram.getCharacterSet().charAt(i));
         }
-        else if (language == "FR") {
-            unigramsFR = new NGram[length];
-            unigrams = initUnigrams(language, unigramsFR);
-        }
-        else {
-            unigramsOT = new NGram[length];
-            unigrams = initUnigrams(language, unigramsOT);
-        }
+
+        return unigrams.get(language);
+    }
+
+    private static void trainUnigrams(String language) {        
+        NGram[] unigramArray = initUnigrams(language);
 
         try {
-            File trainingFolder = new File(INPUT_PATH + "/training");
-            BufferedReader in = new BufferedReader(new FileReader(trainingFolder + "/train" + language + ".txt"));
+            String inputFilePath = language == "EX" ? 
+                INPUT_PATH + "/experiments/train" + language + ".txt" :
+                INPUT_PATH + "/training/train" + language + ".txt";
+
+            BufferedReader in = new BufferedReader(new FileReader(inputFilePath));
 
             int readValue;
             while ((readValue = in.read()) != -1) {                   
@@ -66,7 +75,7 @@ public class Main {
                 }
                 char letter = Character.toLowerCase((char)readValue);
                 int index = NGram.getCharacterSet().indexOf(letter);
-                unigrams[index].incrementCount();                
+                unigramArray[index].incrementCount();                
             }
             in.close();           
         }
@@ -74,7 +83,7 @@ public class Main {
 
         }
 
-        outputUnigrams(unigrams, language);
+        outputUnigrams(unigramArray, language);
     }
 
     private static void outputUnigrams(NGram[] unigrams, String language) {
@@ -87,7 +96,11 @@ public class Main {
         double denominator = n + SMOOTHING_DELTA * b;
 
         try {
-            PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/unigram" + language + ".txt");
+            String outputFilePath = language == "EX" ? 
+                OUTPUT_PATH + "/experiments/unigram" + language + ".txt" :
+                OUTPUT_PATH + "/unigram" + language + ".txt";
+
+            PrintWriter pw = new PrintWriter(outputFilePath);
 
             for (NGram u : unigrams) {            
                 pw.print("(" + u.getCharacter() + ") = ");
@@ -113,7 +126,7 @@ public class Main {
         return count;
     }
 
-    private static NGram[][] initBigrams(String language, NGram[][] bigrams) {
+    private static NGram[][] initBigrams(String language) {
         /*
         [
             [a, b, c, ..., z], -> bigrams aa, ab, ac, ..., az
@@ -123,37 +136,32 @@ public class Main {
             [a, b, c, ..., z]  -> bigrams za, zb, zc, ..., zz
         ]
         */
+        int length = NGram.getCharacterSet().length();
+        bigrams.put(language, new NGram[length][length]);
+        NGram[][] bigramMatrix = bigrams.get(language);
 
-        for (NGram[] outer : bigrams) {            
-            initUnigrams(language, outer);
+        for (int i = 0; i < bigramMatrix.length; i++) { 
+            for (int j = 0; j < bigramMatrix[i].length; j++) {
+                bigramMatrix[i][j] = new NGram(language, NGram.getCharacterSet().charAt(j));
+            }
         }
 
-        return bigrams;
+        return bigramMatrix;
     }
 
     private static void trainBigrams(String language) {
         // Initiate bigram 2D matrix
         // aa, ba, ca, ..., zz
-        int length = NGram.getCharacterSet().length();
-        NGram[][] bigrams;
-
-        if (language == "EN") {
-            bigramsEN = new NGram[length][length];
-            bigrams = initBigrams(language, bigramsEN);
-        }
-        else if (language == "FR") {
-            bigramsFR = new NGram[length][length];
-            bigrams = initBigrams(language, bigramsFR);
-        }
-        else {
-            bigramsOT = new NGram[length][length];
-            bigrams = initBigrams(language, bigramsOT);
-        }
+        
+        NGram[][] bigrams = initBigrams(language);
 
         // Read from corpora
         try {
-            File trainingFolder = new File(INPUT_PATH + "/training");
-            BufferedReader in = new BufferedReader(new FileReader(trainingFolder + "/train" + language + ".txt"));
+            String inputFilePath = language == "EX" ? 
+            INPUT_PATH + "/experiments/train" + language + ".txt" :
+            INPUT_PATH + "/training/train" + language + ".txt";
+
+            BufferedReader in = new BufferedReader(new FileReader(inputFilePath));
 
             int firstValue = in.read();
             int secondValue = in.read();
@@ -199,7 +207,7 @@ public class Main {
 
         }
 
-        //printProbabilityTable(bigrams, language);
+        printProbabilityTable(bigrams, language);
         outputBigrams(bigrams, language);
     }
 
@@ -212,7 +220,11 @@ public class Main {
         // B = size of vocabulary 
 
         try {
-            PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/bigram" + language + ".txt");
+            String outputFilePath = language == "EX" ? 
+                OUTPUT_PATH + "/experiments/bigram" + language + ".txt" :
+                OUTPUT_PATH + "/bigram" + language + ".txt";
+
+            PrintWriter pw = new PrintWriter(outputFilePath);
 
             for (int i = 0; i < bigrams.length; i++) {            
                 for (int j = 0; j < bigrams[i].length; j++) {
@@ -239,7 +251,11 @@ public class Main {
     // For testing purposes only
     private static void printProbabilityTable(NGram[][] bigrams, String language) {
         try {
-            PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/probTable" + language + ".txt");
+            String outputFilePath = language == "EX" ? 
+                OUTPUT_PATH + "/experiments/probTable" + language + ".txt" :
+                OUTPUT_PATH + "/probTable" + language + ".txt";
+
+            PrintWriter pw = new PrintWriter(outputFilePath);
 
             pw.println(language + " BIGRAMS");
             for (char letter : NGram.getCharacterSet().toCharArray()) {
@@ -288,11 +304,11 @@ public class Main {
         return count;
     }
 
-    private static void readSentences() {
+    private static void readSentences(String inputFile, String outputFilePrefix) {
         LinkedList<String> sentences = new LinkedList<String>();        
 
         try {
-            File sentencesFile = new File(INPUT_PATH + "/sentences.txt");
+            File sentencesFile = new File(INPUT_PATH + inputFile);
             BufferedReader in = new BufferedReader(new FileReader(sentencesFile));           
             String line;
 
@@ -308,7 +324,7 @@ public class Main {
 
             int sentenceCount = 0;
             while (!sentences.isEmpty()) {
-                PrintWriter pw = new PrintWriter(OUTPUT_PATH + "/sentences/out" + ++sentenceCount + ".txt");
+                PrintWriter pw = new PrintWriter(OUTPUT_PATH + outputFilePrefix + ++sentenceCount + ".txt");
                 String sentence = sentences.poll();
 
                 pw.println(sentence);
@@ -324,7 +340,7 @@ public class Main {
         }
         catch (IOException e) {
 
-        }       
+        }
     }
 
     private static void readSentenceUnigrams(String sentence, PrintWriter pw) {        
@@ -332,64 +348,54 @@ public class Main {
         pw.println();
 
         // HNB = argmax(log(P(cj)) + sum(log(P(wi|cj))))
-        double logProbabilityEN = getUnigramLanguageModelProbability("EN");
-        double logProbabilityFR = getUnigramLanguageModelProbability("FR");
-        double logProbabilityOT = getUnigramLanguageModelProbability("OT");
+        String[] languageKeys = unigrams.keySet().toArray(new String[0]);
+        // TODO: Replace with 2D matrix?
+        Map<String, Double> logProbabilities = new LinkedHashMap<String, Double>();
+        for (String key : languageKeys) {
+            logProbabilities.put(key, getUnigramLanguageModelProbability(key));
+        }
 
         for (char c : sentence.toCharArray()) {
             if (!Character.isAlphabetic(c)) {
                 continue;
             }
             
-            double tempProbability = 0;
+            double sumProbability = 0;
             c = Character.toLowerCase(c);
             pw.println("UNIGRAM: " + c);
 
-            pw.print("FRENCH: P(" + c + ") = ");
-            tempProbability = getUnigramProbability(unigramsFR, c);
-            logProbabilityFR += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityFR);
-
-            pw.print("ENGLISH: P(" + c + ") = ");
-            tempProbability = getUnigramProbability(unigramsEN, c);
-            logProbabilityEN += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityEN);
-
-            pw.print("OTHER: P(" + c + ") = ");
-            tempProbability = getUnigramProbability(unigramsOT, c);
-            logProbabilityOT += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityOT);
-            pw.println();
+            // TODO: Adapt with languages map
+            for (String key : languageKeys) {
+                pw.print(languages.get(key) + ": P(" + c + ") = ");
+                double unigramProbability = getUnigramProbability(unigrams.get(key), c);
+                sumProbability = logProbabilities.get(key) + unigramProbability;
+                logProbabilities.replace(key, sumProbability);
+                pw.println(unigramProbability + "\t==> log prob of sentence so far: " + sumProbability);                    
+            }
+            pw.println();  
         }
 
-        double max = Math.max(logProbabilityEN, Math.max(logProbabilityFR, logProbabilityOT)); 
-        pw.print("According to the unigram model, the sentence is in ");
-        if (max == logProbabilityEN) {
-            pw.println("English");
-        }
-        else if (max == logProbabilityFR) {
-            pw.println("French");
-        }
-        else {
-            pw.println("Other");
-        }
+        // Initialize to first item in map
+        double max = logProbabilities.get(languageKeys[0]);
+        String maxLanguage = languages.get(languageKeys[0]);
+        for (String key : languageKeys) {
+            if (logProbabilities.get(key) > max) {
+                max = logProbabilities.get(key);
+                maxLanguage = languages.get(key);
+            }
+        } 
+        pw.print("According to the unigram model, the sentence is in " + maxLanguage);
     }
 
     private static double getUnigramLanguageModelProbability(String language) {
-        NGram[] unigrams;
+        NGram[] unigramsArray = unigrams.get(language);
 
-        if (language == "EN") {
-            unigrams = unigramsEN;
+        double numerator = getTotalUnigramCount(unigramsArray) + SMOOTHING_DELTA;
+        double denominator = 0;
+        for (String key : unigrams.keySet()) {
+            denominator += getTotalUnigramCount(unigrams.get(key));
         }
-        else if (language == "FR") {
-            unigrams = unigramsFR;
-        }
-        else {
-            unigrams = unigramsOT;
-        }
-
-        double numerator = getTotalUnigramCount(unigrams) + SMOOTHING_DELTA;
-        double denominator = getTotalUnigramCount(unigramsEN) + getTotalUnigramCount(unigramsFR) + getTotalUnigramCount(unigramsOT) + SMOOTHING_DELTA * NGram.getVocabularySize();    
+        denominator += SMOOTHING_DELTA * NGram.getVocabularySize();
 
         return Math.log10(numerator / denominator);
     }
@@ -433,17 +439,17 @@ public class Main {
             pw.println("BIGRAM: " + firstLetter + secondLetter);
 
             pw.print("FRENCH: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigramsFR, firstLetter, secondLetter);
+            tempProbability = getBigramProbability(bigrams.get("FR"), firstLetter, secondLetter);
             logProbabilityFR += tempProbability;
             pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityFR);
 
             pw.print("ENGLISH: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigramsEN, firstLetter, secondLetter);
+            tempProbability = getBigramProbability(bigrams.get("EN"), firstLetter, secondLetter);
             logProbabilityEN += tempProbability;
             pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityEN);
 
             pw.print("OTHER: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigramsOT, firstLetter, secondLetter);
+            tempProbability = getBigramProbability(bigrams.get("OT"), firstLetter, secondLetter);
             logProbabilityOT += tempProbability;
             pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityOT);
             pw.println();
@@ -463,20 +469,14 @@ public class Main {
     }
 
     private static double getBigramLanguageModelProbability(String language) {
-        NGram[][] bigrams;
+        NGram[][] bigramMatrix = bigrams.get(language);
 
-        if (language == "EN") {
-            bigrams = bigramsEN;
+        double numerator = getTotalBigramCount(bigramMatrix) + SMOOTHING_DELTA;
+        double denominator = 0;
+        for (String key : bigrams.keySet()) {
+            denominator += getTotalBigramCount(bigrams.get(key));
         }
-        else if (language == "FR") {
-            bigrams = bigramsFR;
-        }
-        else {
-            bigrams = bigramsOT;
-        }
-
-        double numerator = getTotalBigramCount(bigrams) + SMOOTHING_DELTA;
-        double denominator = getTotalBigramCount(bigramsEN) + getTotalBigramCount(bigramsEN) + getTotalBigramCount(bigramsEN) + SMOOTHING_DELTA * Math.pow(NGram.getVocabularySize(), 2);
+        denominator += SMOOTHING_DELTA * Math.pow(NGram.getVocabularySize(), 2);
 
         return Math.log10(numerator / denominator);
     }
