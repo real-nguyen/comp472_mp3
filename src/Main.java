@@ -18,6 +18,7 @@ public class Main {
     private static Map<String, String> languages;
 
     public static void main(String[] args) {  
+        // Use LinkedHashMap to preserve adding order
         unigrams = new LinkedHashMap<String, NGram[]>();
         bigrams = new LinkedHashMap<String, NGram[][]>();
         languages = new LinkedHashMap<String, String>();
@@ -349,7 +350,6 @@ public class Main {
 
         // HNB = argmax(log(P(cj)) + sum(log(P(wi|cj))))
         String[] languageKeys = unigrams.keySet().toArray(new String[0]);
-        // TODO: Replace with 2D matrix?
         Map<String, Double> logProbabilities = new LinkedHashMap<String, Double>();
         for (String key : languageKeys) {
             logProbabilities.put(key, getUnigramLanguageModelProbability(key));
@@ -364,7 +364,6 @@ public class Main {
             c = Character.toLowerCase(c);
             pw.println("UNIGRAM: " + c);
 
-            // TODO: Adapt with languages map
             for (String key : languageKeys) {
                 pw.print(languages.get(key) + ": P(" + c + ") = ");
                 double unigramProbability = getUnigramProbability(unigrams.get(key), c);
@@ -384,7 +383,7 @@ public class Main {
                 maxLanguage = languages.get(key);
             }
         } 
-        pw.print("According to the unigram model, the sentence is in " + maxLanguage);
+        pw.println("According to the unigram model, the sentence is in " + maxLanguage);
     }
 
     private static double getUnigramLanguageModelProbability(String language) {
@@ -413,9 +412,11 @@ public class Main {
         pw.println();
 
         // HNB = argmax(log(P(cj)) + sum(log(P(wi|cj))))
-        double logProbabilityEN = getBigramLanguageModelProbability("EN");
-        double logProbabilityFR = getBigramLanguageModelProbability("FR");
-        double logProbabilityOT = getBigramLanguageModelProbability("OT");
+        String[] languageKeys = unigrams.keySet().toArray(new String[0]);
+        Map<String, Double> logProbabilities = new LinkedHashMap<String, Double>();
+        for (String key : languageKeys) {
+            logProbabilities.put(key, getBigramLanguageModelProbability(key));
+        }
         String cleanedSentence = "";
 
         for (char c : sentence.toCharArray()) {
@@ -434,38 +435,30 @@ public class Main {
 
             firstLetter = cleanedSentence.charAt(i);
             secondLetter = cleanedSentence.charAt(i + 1);
-            double tempProbability = 0;
+            double sumProbability = 0;
 
             pw.println("BIGRAM: " + firstLetter + secondLetter);
 
-            pw.print("FRENCH: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigrams.get("FR"), firstLetter, secondLetter);
-            logProbabilityFR += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityFR);
-
-            pw.print("ENGLISH: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigrams.get("EN"), firstLetter, secondLetter);
-            logProbabilityEN += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityEN);
-
-            pw.print("OTHER: P(" + secondLetter + "|" + firstLetter + ") = ");
-            tempProbability = getBigramProbability(bigrams.get("OT"), firstLetter, secondLetter);
-            logProbabilityOT += tempProbability;
-            pw.println(tempProbability + "\t==> log prob of sentence so far: " + logProbabilityOT);
+            for (String key : languageKeys) {
+                pw.print(languages.get(key) + ": P(" + secondLetter + "|" + firstLetter + ") = ");
+                double bigramProbability = getBigramProbability(bigrams.get(key), firstLetter, secondLetter);
+                sumProbability = logProbabilities.get(key) + bigramProbability;
+                logProbabilities.replace(key, sumProbability);
+                pw.println(bigramProbability + "\t==> log prob of sentence so far: " + sumProbability);                    
+            }
             pw.println();
         }
 
-        double max = Math.max(logProbabilityEN, Math.max(logProbabilityFR, logProbabilityOT)); 
-        pw.print("According to the bigram model, the sentence is in ");
-        if (max == logProbabilityEN) {
-            pw.println("English");
-        }
-        else if (max == logProbabilityFR) {
-            pw.println("French");
-        }
-        else {
-            pw.println("Other");
-        }
+        // Initialize to first item in map
+        double max = logProbabilities.get(languageKeys[0]);
+        String maxLanguage = languages.get(languageKeys[0]);
+        for (String key : languageKeys) {
+            if (logProbabilities.get(key) > max) {
+                max = logProbabilities.get(key);
+                maxLanguage = languages.get(key);
+            }
+        } 
+        pw.println("According to the bigram model, the sentence is in " + maxLanguage);
     }
 
     private static double getBigramLanguageModelProbability(String language) {
