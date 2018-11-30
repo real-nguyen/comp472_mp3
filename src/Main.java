@@ -46,6 +46,8 @@ public class Main {
         trainUnigrams("EX");
         trainBigrams("EX");
         readSentences("/experiments/ex3-sentences.txt", "/experiments/sentences/ex3-out");
+        // Experiment 4: Read basic setup sentences including EX
+        readSentences("/sentences.txt", "/experiments/sentences/ex4-out");
     }
 
     private static NGram[] initUnigrams(String language) {        
