@@ -235,7 +235,7 @@ public class Main {
                     pw.print("(" + NGram.getCharacterSet().charAt(i) + "|" + bigrams[i][j].getCharacter() + ") = ");
                     
                     double numerator = bigrams[i][j].getCount() + SMOOTHING_DELTA;
-                    long n = getBigramCount(bigrams, i);
+                    long n = getTotalUnigramCount(bigrams[i]);
                     long b = NGram.getVocabularySize();
                     double denominator = n + SMOOTHING_DELTA * b;
                     
@@ -283,16 +283,6 @@ public class Main {
         } catch (IOException e) {
 
         }
-    }
-
-    private static long getBigramCount(NGram[][] bigrams, int outerIndex) {
-        long count = 0;
-     
-        for (NGram inner : bigrams[outerIndex]) {
-            count += inner.getCount();
-        }        
-
-        return count;
     }
 
     private static long getTotalBigramCount(NGram[][] bigrams) {
@@ -480,7 +470,7 @@ public class Main {
         int firstIndex = NGram.getCharacterSet().indexOf(firstCharacter);
         int secondIndex = NGram.getCharacterSet().indexOf(secondCharacter);
         double numerator = bigrams[firstIndex][secondIndex].getCount() + SMOOTHING_DELTA;
-        double denominator = getBigramCount(bigrams, firstIndex) + SMOOTHING_DELTA * NGram.getVocabularySize();
+        double denominator = getTotalUnigramCount(bigrams[firstIndex]) + SMOOTHING_DELTA * NGram.getVocabularySize();
     
         return Math.log10(numerator / denominator);
     }
